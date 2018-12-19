@@ -1,0 +1,181 @@
+---
+title: "BDA3 chapter 2 exercises"
+author: "Timothy Daley"
+output: html_document
+---
+
+1.  Posterior inference: suppose you have a Beta(4,4) prior distribution on the probability $\theta$ that a coin will yield a head when spun.  The coin is indepdently sup 10 times and heads appears fewer than 3 times.  You are not told how many heads were seen, only that the number is less than 3.  Calculate your exact posterior distribution for $\theta$ and sketch it.
+
+$$\Pr(X < 3 | \theta) = \sum_{i = 0}^{2} \binom{10}{i} \theta^{i} (1 - \theta)^{10 - i}.$$
+
+$$
+\begin{aligned}
+\Pr(X \leq 3) &= \int \Pr(X < 3 | \theta) \Pr(\theta) d \theta = \int_{0}^{1} \sum_{i= 0}^{2} \binom{10}{i} \theta^{i} (1 - \theta)^{10 - i} \theta^{3} (1 - \theta)^{3} / \text{Beta}(4, 4) \, d \theta
+\notag \\
+&= \sum_{i = 0}^{2} \binom{10}{i} \frac{1}{\text{Beta}(4, 4)} \int_{0}^{1} \theta^{3 + i} ( 1 - \theta )^{13 - i} d \theta
+\notag \\
+&= \sum_{i = 0}^{2} \binom{10}{i} \frac{\text{Beta}(4 + i, 14 - i)}{\text{Beta}(4,4)}
+\notag 
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\Pr(\theta | X < 3) = \frac{\Pr(X < 3 | \theta) \Pr(\theta) }{\Pr(X < 3)} = \frac{\sum_{i= 0}^{2} \binom{10}{i} \frac{1}{\text{Beta}(4, 4)} \theta^{i + 3} (1 - \theta)^{13 - i}  }{  \sum_{i = 0}^{2} \binom{10}{i} \frac{\text{Beta}(4 + i, 14 - i)}{\text{Beta}(4,4)}}
+\end{aligned}
+$$
+
+```{r}
+s = seq(from = 0, to = 1, length = 201)
+x = c(0, 1, 2)
+y = sapply(s, function(j) sum(choose(10, x)*j^(x + 3)*(1 - j)^(13 - x)/beta(4, 4))/sum(choose(10, x)*beta(4 + x, 14 - x)/beta(4, 4)))
+plot(s, y, type = "l", lwd = 2)
+```
+
+2. Predictive distributions. Consider two coinds $C_{1}$ and $C_{2}, with the following characteristics: $\Pr(\text{heads} | C_{1}) = 0.6$ and $\Pr(\text{heads} | C_{2}) = 0.4$.  Choose one of the coins at random and imagine spinning it repeatedly.  Given that the first two spins from the chosen coin are tails, what is the expectation of the number of additional spins until a heads show up.
+
+If $\theta$ is the probability of heads, then the number of spins until a heads shows up is a geometric distribution with $\Pr(X = k) = (1 - \theta)^{k - 1} \theta$.  
+
+$$
+\begin{aligned}
+\Pr(X > 2) &= 0.5* \sum_{k > 2} (1 - 0.6)^{k - 1} 0.6 + 0.5* \sum_{k > 2} (1 - 0.4)^{k - 1} 0.4 
+\notag \\
+&= 0.5*0.6*0.4^2*(1/(1 - 0.6)) + 0.5*0.4*0.6^2*(1/(1 - 0.4)) = 0.24
+\notag 
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\mathrm{E}(X | X > 2) &= \frac{\sum_{k > 2} k \Pr(X = k) }{\Pr(X > 2)} 
+\notag \\
+&= \frac{1}{0.24}  \sum_{k \geq 3} k \big(0.5*(1 - 0.6)^{k - 1} 0.6 + 0.5 (1 - 0.4)^{k - 1} 0.4 \big)
+\notag \\
+&= \frac{1}{0.24} \big( 0.5*(\sum_{k \geq 1} k (1 - 0.6)^{k - 1} 0.6 - 0.6 - 2*0.4*0.6) + 0.5*(\sum_{k \geq 1} k (1 - 0.4)^{k - 1} 0.4 - 0.4 - 2*0.6*0.4) \big)
+\notag \\
+&= \frac{1}{0.24} \big( 0.5(0.6^{-1} - 0.6*0.4 - 2*0.4*0.6) + 0.5*(0.4^{-1} - 0.4 - 2*0.6*0.4) \big)
+\notag \\
+&= 5.347222
+\notag
+\end{aligned}
+$$
+Therefore it will take 5.347222 - 2 = 3.347222 additional spins to get a heads.
+
+3.  Let $y$ be the number of 6's in 1000 rolls of a fair die.
+a. Sketch the approximate distribution of $y$ based on the normal approximation
+$y \sim N( 1000 \cdot \frac{1}{6}, 1000 \frac{1}{6} \frac{5}{6})$
+```{r}
+s = seq(from = 0, to = 1000, by = 1)
+y = dnorm(s, mean = 1000/6, sd = sqrt(1000*5/36))
+plot(s, y, type = "l")
+```
+
+b.  Using the normal distribution, give approximate 5\%, 25\%, 50\%, 75\%, and 95\%
+```{r}
+qnorm(0.05, mean = 1000/6, sd = sqrt(1000*5/36))
+qnorm(0.25, mean = 1000/6, sd = sqrt(1000*5/36))
+qnorm(0.5, mean = 1000/6, sd = sqrt(1000*5/36))
+qnorm(0.75, mean = 1000/6, sd = sqrt(1000*5/36))
+qnorm(0.95, mean = 1000/6, sd = sqrt(1000*5/36))
+```
+
+4. Let $y$ be the number of 6's in 1000 independent rolls of a particular real die, which may be unfair.  Let $\theta$ be the probability that the die lands on a 6.  Suppose your prior distribution for $\theta$ is as follows:
+$$
+\begin{aligned}
+\Pr(\theta = 1/12) &= 0.25
+\notag \\
+\Pr(\theta = 1/6) &= 0.5
+\notag \\
+\Pr(\theta = 1/4) &= 0.25.
+\notag
+\end{aligned}
+$$
+a. Using the normal approximation for the conditional distribution $\Pr(y | \theta)$, sketch your approximate prior predictive distribution for $y$
+
+```{r}
+s = seq(from = 0, to = 1000, by = 1)
+y = 0.25*dnorm(s, mean = 1000/12, sd = sqrt(1000*11/(12*12))) + 0.5*dnorm(s, mean = 1000/6, sd = sqrt(1000*5/36)) + 0.25*dnorm(s, mean = 1000/4, sd = sqrt(1000*3/16))
+plot(s, y, type = "l")
+```
+
+b. Give approximate 5\%, 25%, 50\%. 75\%, and 95\% points for the distribution of $y$.
+
+The 50\% point will obviously be in the center of $\theta = 1/6$, 166.6667. The 25\% point will be about halfway between 166.667 and 83.333 = 125.  Similary the 75\% point will be halfway between the 166.667 and 250 = 208.335.  The 5\% point will be 1/4 of the way through the 1/12 portion, and similarly the 95\% point will be 80\% of the way through the 1/4 portion.
+```{r}
+qnorm(0.2, mean = 1000/12, sd = sqrt(1000*11/144))
+qnorm(0.8, mean = 1000/4, sd = sqrt(1000*3/16))
+```
+
+5. Let $y$ be the number of heads in $n$ spins of a coin, whose probability of heads is $\theta$.
+a. If your prior distribution for $\theta$ is uniform on the range $[0, 1]$, derive your prior predictive distribution for $y$,
+$$
+\Pr(y = k) = \int_{0}^{1} \Pr(y = k | \theta) d \theta,
+$$
+for each $k = 0, 1, \ldots, n$.
+
+$\Pr(y = k | \theta) = \binom{n}{k} \theta^{k} (1 - \theta)^{n - k}$, therefore $\Pr(y = k) = \int_{0}^{\infty} \binom{n}{k} \theta^{k} (1 - \theta)^{n - k} d \theta = \binom{n}{k} \text{Beta}(k + 1, n - k + 1)$.
+
+b. Suppose you assign a Beta$(\alpha, \beta)$ prior distribution for $\theta$ and then you observe $y$ heads out of $n$ spins.  Show algebraically that your posterior mean of $\theta$ always lies between your prior mean $\frac{\alpha}{\alpha + \beta}$ aand the observed relative frequency of heads $\frac{y}{n}$.
+
+The posterior mean is equal to $\Pr(\theta | y = k) = \Pr(y = k| \theta) \Pr(\theta) / \Pr(y)$.  
+$$
+\begin{aligned}
+\Pr(y = k) &= \int_{0}^{1} \binom{n}{k} \theta^{k} (1 - \theta)^{n - k} \theta^{\alpha - 1} (1 - \theta)^{\beta - 1} \frac{1}{\text{Beta}(\alpha, \beta)} d \theta
+\notag \\\
+&= \binom{n}{k} \frac{1}{\text{Beta}(\alpha, \beta)} \int_{0}^{1} \theta^{k + \alpha - 1} (1 - \theta)^{n - k + \beta - 1} d\theta 
+\notag \\
+&= \binom{n}{k} \frac{\text{Beta}(k + \alpha, n - k + \beta)}{\text{Beta}(\alpha, \beta)} = \frac{\Gamma(n + 1) \Gamma(\alpha + \beta) \Gamma(k + \alpha) \Gamma(n - k + \beta)}{\Gamma(n - k + 1) \Gamma(k + 1) \Gamma(\alpha) \Gamma(\beta) \Gamma(n + \alpha + \beta)}.
+\notag
+\end{aligned}
+$$
+Therefore
+$$
+\begin{aligned}
+\Pr(\theta | y = k) &= \binom{n}{k} \theta^{k} (1 - \theta)^{n - k} \theta^{\alpha - 1} (1 - \theta)^{\beta - 1} \frac{1}{\text{Beta}(\alpha, \beta)} / \bigg( \binom{n}{k} \frac{\text{Beta}(k + \alpha, n - k + \beta)}{\text{Beta}(\alpha, \beta)} \bigg)
+\notag \\
+&= \theta^{k + \alpha - 1} (1 - \theta)^{n - k + \beta - 1} / \text{Beta}(k + \alpha, n - k + \beta).
+\notag
+\end{aligned}
+$$
+
+The conditional expecation of $\theta$, given $y = k$ is equal to 
+$$
+\begin{aligned}
+\mathrm{E} (\theta | y = k) &= \int_{0}^{1} \theta \theta^{k + \alpha - 1} (1 - \theta)^{n - k + \beta - 1} / \text{Beta}(k + \alpha, n - k + \beta) d \theta
+\notag \\
+&= \frac{\text{Beta}(k + \alpha + 1, n - k + \beta)}{\text{Beta}(k + \alpha, n - k + \beta)} 
+\notag \\
+&= \frac{\Gamma(k + \alpha + 1) \Gamma(n - k + \beta) \Gamma(n + \alpha + \beta)}{\Gamma (k + \alpha) \Gamma(n - k + \beta) \Gamma(n + \alpha + \beta + 1)}
+\notag \\
+&= \frac{k + \alpha}{n + \alpha + \beta}.
+\notag
+\end{aligned}
+$$
+
+c.  If the prior on $\theta$ is a uniform distribution then the prior variance is $1/12$.  Note that a Beta(1,1) is equivalent to the uniform distribution.  Therefore the posterior variance is equal to 
+$$
+\begin{aligned}
+\text{Var}(\theta | y = k) &= \mathrm{E}(\theta^{2} | y = k) - \mathrm{E}(\theta | y = k)^{2}
+\notag \\
+&= \int_{0}^{1} \theta^{2} \theta^{k + \alpha - 1} (1 - \theta)^{n - k + \beta - 1} / \text{Beta}(k + \alpha, n - k + \beta) d\theta -  \bigg( \frac{k + 1}{n + 2} \bigg)^{2}
+\notag \\
+&= \frac{\text{Beta}(k + \alpha + 2, n - k + \beta)}{\text{Beta}(k + \alpha, n - k + \beta)} - \bigg( \frac{k + 1}{n + 2} \bigg)^{2}
+\notag \\
+&= \frac{\Gamma(k + \alpha + 2) \Gamma(n - k + \beta) \Gamma(n + \alpha + \beta)}{\Gamma (k + \alpha) \Gamma(n - k + \beta) \Gamma(n + \alpha + \beta + 2) } - \bigg( \frac{k + 1}{n + 2} \bigg)^{2}
+\notag \\
+&= \frac{(k + \alpha + 1) (k + \alpha)}{(n + \alpha + \beta + 1)(n + \alpha + \beta)} - \bigg( \frac{k + 1}{n + 2} \bigg)^{2}
+\notag \\
+&= \frac{(k + 2)(k + 1)}{(n + 3)(n + 2)} - \frac{(k + 1)(k + 1)}{(n + 2)(n + 2)}
+\notag \\
+&= \frac{k + 1}{n + 2} \bigg( \frac{k + 2}{n + 3} - \frac{k + 1}{n + 2} \bigg)
+\notag \\
+&= \frac{k + 1}{n + 2} \bigg( \frac{nk + 2k + 2n + 4 - (nk + n + 3k + 3)}{(n + 3)(n + 2)} \bigg)
+= \frac{k + 1}{n + 2} \frac{n - k + 1}{(n + 3)(n + 2)}.
+\notag
+\end{aligned}
+$$
+
+d. Give an example of a Beta$(\alpha, \beta)$ prior distribution and data $y$ and $n$ in which the posterior variance of $\theta$ is higher than the prior variance.  
+
+If $\alpha$ and $\beta$ are really large and $y/n$ is not close to the prior mean, then the posterior variance will be larger than the prior variance.
+
